@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style type="text/css">
+    .svg-container {
+        display: inline-block;
+        position: relative;
+        width: 100%;
+        padding-bottom: 100%; /* aspect ratio */
+        vertical-align: top;
+        overflow: hidden;
+    }
+    .svg-content-responsive {
+        display: inline-block;
+        position: absolute;
+        top: 10px;
+        left: 0;
+}
+</style>
+
+<!-- Body tag is where we will append our SVG and SVG objects
+        https://davidwalsh.name/learning-d3
+-->
+<body>
+
+    <div id="canvas">
+    </div>
+
+</body>
+
+<!-- Load in the d3 library -->
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script>
+
+var colors = [ "#05B89A", "#0B90B6", "#FFCE65", "#F1C039", "#FFC707", "#FF9339", "#FF6307", "#FF4739", "#FFFF07", "#CFC707", "#FFCFFF", "#1AC707", "#A1C707" ];
+
+/*
+Data arrays
+*/
+    var data0 = [
+            { gpa: 3.42, height: 188 },
+            { gpa: 3.54, height: 153 },
+            { gpa: 3.14, height: 148 },
+            { gpa: 2.76, height: 164 },
+            { gpa: 2.20, height: 174 },
+            { gpa: 3.45, height: 142 },
+            { gpa: 2.90, height: 160 },
+            { gpa: 3.15, height: 112 },
+            { gpa: 2.22, height: 172 },
+            { gpa: 3.15, height: 112 },
+            { gpa: 2.95, height: 162 },
+            { gpa: 2.16, height: 143 }
+    ], 
+    data1 = [
+        { gpa: 3.15, height: 157 },
+        { gpa: 3.12, height: 175 },
+        { gpa: 3.67, height: 167 },
+        { gpa: 3.85, height: 149 },
+        { gpa: 2.32, height: 165 },
+        { gpa: 3.01, height: 171 },
+        { gpa: 3.54, height: 168 },
+        { gpa: 2.89, height: 180 },
+        { gpa: 3.75, height: 153 }
+    ]
+    
+var margin = {top: 20, right: 200, bottom: 50, left: 20};
+
+//scales    
+var x = d3.scaleLinear()
+    .domain([d3.min(data0, function(d){ return d.gpa; }) / 1.05, 
+        d3.max(data0, function(d){ return d.gpa; }) * 1.05])
+    .range([0, 800]);
+
+var y = d3.scaleLinear()
+    .domain([d3.min(data0, function(d){ return d.height; }) / 1.05,
+        d3.max(data0, function(d){ return d.height; }) * 1.05])
+    .range([500, 0]);
+
+var width = 960 - margin.left - margin.right,
+    height = 570 - margin.top - margin.bottom;
+
+var svgcanvas = d3.select("#canvas");
+
+//axes
+var xAxisCall = d3.axisBottom(x);
+var yAxisCall = d3.axisLeft(y)
+
+var canvas = svgcanvas
+                .append("div")
+                   .classed("svg-container", true) //container class to make it responsive
+                .append("svg")
+               // .attr("width", width + margin.left + margin.right)
+                //.attr("height", height + margin.top + margin.bottom)
+                   //responsive SVG needs these 2 attributes and no width and height attr
+                   .attr("preserveAspectRatio", "xMinYMin meet")
+                   .attr("viewBox", "-80 -80 1200 800")
+                   .classed("svg-content-responsive", true)
+                .append("g")
+                  .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+
+var circles = canvas.selectAll("circle")
+    .data(data0);
+
+// circles
+//     .enter()
+//     .append("circle")
+//         .attr("cx", function(d, i){ return x(d.gpa); })
+//         .attr("cy", function(d, i){ return y(d.height); })
+//         .attr("r", function(d, i){ return (2 * i+15 )})
+//         .attr("fill", "grey")
+//         .text(function (d) { return d.height+" - "+d.gpa; });
+
+var g = canvas.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var xAxisCall = d3.axisBottom(x)  // x - from scale
+var xAxis = g.append("g")
+    .attr("class", "x-axis")
+    .attr("transform", "translate(" + 0 + "," + height + ")")
+    .call(xAxisCall);
+
+var yAxisCall = d3.axisLeft(y)
+var yAxis = g.append("g")
+    .attr("class", "y-axis")
+    .call(yAxisCall);
+
+//labels
+xAxis.append("text")
+    .style('fill', 'darkOrange')
+    .attr("class", "axis-title")
+    .attr("transform", "translate(" + width/2 + "," + 60 + ")")
+    .attr("y", -6)
+    .text("Gade Point Average")
+
+    xAxis.append("text")
+    .style('fill', 'steelBlue')
+    .attr("class", "axis-title")
+    .attr("transform", "translate(" + width + ", 0)")
+    .attr("y", -6)
+    .text("Gade Point Average")
+    
+
+yAxis.append("text")
+    .style('fill', 'darkOrange')
+    .attr("class", "axis-title")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 16)
+    .text("Height / Centimeters")
+
+
+    /// update data
+    var flag = true;
+
+    // Run this code every second...
+    var interval = d3.interval(function(){
+        // Flick between our two data arrays
+        data = flag ? data0 : data1;
+
+        // Update our chart with new data
+        update(data);
+
+        // Update our flag variable
+        flag = !flag;
+    }, 1000)
+
+    // 
+/////////////////////////////////////
+    //                        //
+    // Run for the first time //
+    //                        //
+/////////////////////////////////////  
+    update(data0);
+    
+    function update(data){
+
+    // var color = d3.scaleOrdinal()
+    //     .range(d3.schemeCategory20);
+
+    var t = d3.transition().duration(750);    
+
+    // Update our scales
+    x.domain([d3.min(data, function(d){ return d.gpa; }) / 1.05, 
+        d3.max(data, function(d){ return d.gpa; }) * 1.05])
+    y.domain([d3.min(data, function(d){ return d.height; }) / 1.05,
+        d3.max(data, function(d){ return d.height; }) * 1.05])
+
+    // Update our axes
+    xAxis.transition(t).call(xAxisCall);
+    yAxis.transition(t).call(yAxisCall);
+
+    // Update our circles
+    var circles = g.selectAll("circle")
+        .data(data);
+
+    circles.exit()
+        .transition(t)
+        .attr("fill-opacity", 0.1)
+        .attr("cx", x(5))
+        .remove()
+
+    circles.transition(t)
+        .attr("cx", function(d){ return x(d.gpa) })
+        .attr("cy", function(d){ return y(d.height) })
+
+    circles.enter()
+        .append("circle")
+            .attr("cx", function(d){ return x(d.gpa) })
+            .attr("cy", function(d){ return y(d.height) })
+            .attr("r", function(d, i){ return (2 * i+5 )})
+            .attr("fill", function(d,i){ return colors[i]})
+            .transition(t)
+    .attr("fill-opacity", 1)
+    .attr("cy", function(d){ return y(d.height) })
+        //.text(function (d) { return d.height+" - "+d.gpa; })
+        
+}
+
+</script>
